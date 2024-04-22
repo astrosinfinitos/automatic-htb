@@ -12,12 +12,12 @@ function gestionar_opciones {
         case $opcion_vpn in
             1 )
                 clear
-                sudo openvpn vpn_laboratorio.ovpn &>/dev/null 2>&1 && echo "Conexión a VPN de laboratorio exitosa." || echo "Error: La conexión a VPN de laboratorio no pudo establecerse."
+                sudo openvpn YOUR_VPN &>/dev/null 2>&1 && echo "Conexión a VPN de laboratorio exitosa." || echo "Error: La conexión a VPN de laboratorio no pudo establecerse."
                 disown
                 ;;
             2 )
                 clear
-                sudo openvpn starting_point_Rorschach1994.ovpn &>/dev/null 2>&1 && echo "Conexión a VPN de starting point exitosa." || echo "Error: La conexión a VPN de starting point no pudo establecerse."
+                sudo openvpn YOUR_VPN &>/dev/null 2>&1 && echo "Conexión a VPN de starting point exitosa." || echo "Error: La conexión a VPN de starting point no pudo establecerse."
                 disown
                 ;;
             3 )
