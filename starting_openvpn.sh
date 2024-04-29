@@ -1,5 +1,8 @@
 #!/bin/zsh
 
+opcion_hosts=""
+opcion_vpn=""
+
 function gestionar_opciones {
     function conectar_vpn {
         clear
@@ -12,13 +15,15 @@ function gestionar_opciones {
         case $opcion_vpn in
             1 )
                 clear
-                sudo openvpn YOUR_VPN &>/dev/null 2>&1 && echo "Conexión a VPN de laboratorio exitosa." || echo "Error: La conexión a VPN de laboratorio no pudo establecerse."
+                sudo openvpn vpn_laboratorio.ovpn </dev/null &>/dev/null &
+                echo "Intentando conectar a VPN de laboratorio."
+                sudo openvpn YOUR_VPN &>/dev/null 2>&1 && echo "Conexión a VPN de laboratorio exitosa." || echo "Error: La conexión a VPN de laboratorio falló."
                 disown
                 ;;
             2 )
                 clear
-                sudo openvpn YOUR_VPN &>/dev/null 2>&1 && echo "Conexión a VPN de starting point exitosa." || echo "Error: La conexión a VPN de starting point no pudo establecerse."
-                disown
+                sudo openvpn YOUR_VPN.ovpn </dev/null &>/dev/null &
+                echo "Intentando conectar a VPN de starting point."
                 ;;
             3 )
                 clear
@@ -78,12 +83,13 @@ function gestionar_opciones {
     conectar_vpn
     manipular_hosts
 
-    if [[ $opcion_hosts -eq 3 && $opcion_vpn -eq 3 ]]; then
+    if [[ "$opcion_hosts" -eq 3 && "$opcion_vpn" -eq 3 ]]; then
         echo "No se realizaron cambios ni en el archivo /etc/hosts ni en las conexiones VPN."
     fi
 }
 
 gestionar_opciones
+
 
 
 
