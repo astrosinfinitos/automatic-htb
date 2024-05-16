@@ -1,4 +1,4 @@
-!/bin/zsh
+#!/bin/zsh
 
 opcion_hosts=""
 opcion_vpn=""
