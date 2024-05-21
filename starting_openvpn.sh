@@ -53,35 +53,63 @@ function gestionar_opciones {
             cat /etc/hosts
         }
 
+        function agregar_entrada_host {
+            local continuar="y"
+            while [[ $continuar == "y" || $continuar == "Y" ]]; do
+                clear
+                echo "Agregar una nueva entrada al archivo /etc/hosts:"
+                echo -n "Introduce la IP: "
+                read ip
+                echo -n "Introduce el nombre del host: "
+                read nombre_host
+                echo "$ip $nombre_host" | sudo tee -a /etc/hosts
+
+                echo "¿Deseas agregar otra entrada? (y/n): "
+                read continuar
+            done
+
+            # Mostrar el contenido actualizado del archivo /etc/hosts
+            mostrar_contenido_hosts
+        }
+
+        function borrar_entrada_host {
+            local continuar="y"
+            while [[ $continuar == "y" || $continuar == "Y" ]]; do
+                clear
+                echo "Borrar una entrada del archivo /etc/hosts:"
+                echo -n "Introduce la IP o el nombre del host a borrar: "
+                read entrada
+
+                sudo sed -i".bak" "/$entrada/d" /etc/hosts
+
+                echo "¿Deseas borrar otra entrada? (y/n): "
+                read continuar
+            done
+
+            # Mostrar el contenido actualizado del archivo /etc/hosts
+            mostrar_contenido_hosts
+        }
+
         clear
-        echo "¿Quieres añadir o borrar algo en el /etc/hosts? "
-        echo "1. Añadir"
-        echo "2. Borrar"
-        echo "3. No hacer cambios"
+        echo "¿Qué deseas hacer?"
+        echo "1. Mostrar contenido de /etc/hosts"
+        echo "2. Agregar entrada al archivo /etc/hosts"
+        echo "3. Borrar entrada del archivo /etc/hosts"
+        echo "4. Volver al menú principal"
         read opcion_hosts
 
         case $opcion_hosts in
             1 )
-                clear
-                echo -n "Ingresa la dirección IP: "
-                read ip
-                echo -n "Ingresa el nombre de host: "
-                read hostname
-                echo "$ip $hostname" | sudo tee -a /etc/hosts >/dev/null
-                echo "Contenido añadido exitosamente."
                 mostrar_contenido_hosts
                 ;;
             2 )
-                clear
-                echo -n "Ingresa el nombre de host que deseas borrar: "
-                read hostname
-                sudo sed -i "/$hostname/d" /etc/hosts
-                echo "Entrada eliminada exitosamente."
-                mostrar_contenido_hosts
+                agregar_entrada_host
                 ;;
             3 )
-                clear
-                echo "No se realizaron cambios en el /etc/hosts."
+                borrar_entrada_host
+                ;;
+            4 )
+                gestionar_opciones
                 ;;
             * )
                 clear
@@ -90,14 +118,33 @@ function gestionar_opciones {
         esac
     }
 
-    conectar_vpn
-    manipular_hosts
+    clear
+    echo "¿Qué deseas hacer?"
+    echo "1. Conectar VPN"
+    echo "2. Manipular archivo /etc/hosts"
+    echo "3. Salir"
+    read opcion_principal
 
-    if [[ "$opcion_hosts" == "3" && "$opcion_vpn" == "3" ]]; then
-        echo "No se realizaron cambios ni en el archivo /etc/hosts ni en las conexiones VPN."
-    fi
+    case $opcion_principal in
+        1 )
+            conectar_vpn
+            ;;
+        2 )
+            manipular_hosts
+            ;;
+        3 )
+            clear
+            echo "Saliendo del script."
+            exit 0
+            ;;
+        * )
+            clear
+            echo "Opción no válida."
+            ;;
+    esac
 }
 
 gestionar_opciones
+
 
 
