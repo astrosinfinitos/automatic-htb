@@ -2,6 +2,21 @@
 
 opcion_hosts=""
 opcion_vpn=""
+sudo_password=""
+
+# Comprobar si el script se ejecuta con permisos de root
+if [[ $EUID -ne 0 ]]; then
+    clear
+    echo "Este script debe ser ejecutado como root." 1>&2
+    exit 1
+fi
+
+function solicitar_sudo_password {
+    clear
+    echo -n "Introduce la contraseña de sudo: "
+    read -s sudo_password
+    echo
+}
 
 function gestionar_opciones {
     function conectar_vpn {
@@ -9,17 +24,19 @@ function gestionar_opciones {
         echo "¿Qué deseas hacer?"
         echo "1. Conectar a VPN de laboratorio"
         echo "2. Conectar a VPN de starting point"
-        echo "3. No conectar a ninguna VPN"
+        echo "3. Interrumpir la conexión VPN"
+        echo "4. Volver al menú principal"
+        echo "5. Salir del script"
         read opcion_vpn
 
         case $opcion_vpn in
             1 )
                 clear
                 echo "Intentando conectar a VPN de laboratorio."
-                sudo openvpn YOUR_VPN &>/dev/null &
+                echo $sudo_password | sudo -S openvpn YOUR_VPN &>/dev/null &
                 sleep 2
-                if [[ $? -eq 0 ]]; then
-                    echo "Conexión a VPN de laboratorio exitosa."
+                if pgrep openvpn &>/dev/null; then
+                    echo "Conexión a VPN de laboratorio exitosa" 
                 else
                     echo "Error: La conexión a VPN de laboratorio falló."
                 fi
@@ -27,9 +44,9 @@ function gestionar_opciones {
             2 )
                 clear
                 echo "Intentando conectar a VPN de starting point."
-                sudo openvpn YOUR_VPN &>/dev/null &
+                echo $sudo_password | sudo -S openvpn YOUR_VPN_LAB &>/dev/null &
                 sleep 2
-                if [[ $? -eq 0 ]]; then
+                if pgrep openvpn &>/dev/null; then
                     echo "Conexión a VPN de starting point exitosa."
                 else
                     echo "Error: La conexión a VPN de starting point falló."
@@ -37,11 +54,32 @@ function gestionar_opciones {
                 ;;
             3 )
                 clear
-                echo "No se realizó ninguna conexión VPN."
+                echo "Interrumpiendo la conexión VPN."
+                if pgrep openvpn &>/dev/null; then
+                    echo $sudo_password | sudo -S pkill openvpn
+                    sleep 2
+                    if ! pgrep openvpn &>/dev/null; then
+                        echo "Conexión VPN interrumpida exitosamente."
+                    else
+                        echo "Error: No se pudo interrumpir la conexión VPN."
+                    fi
+                else
+                    echo "No hay conexión VPN activa."
+                fi
+                ;;
+            4 )
+                clear
+                gestionar_opciones
+                ;;
+	    5 )
+		clear
+                echo "Saliendo del programa"
+                exit 0
                 ;;
             * )
                 clear
                 echo "Opción no válida."
+		exit 127
                 ;;
         esac
     }
@@ -62,8 +100,7 @@ function gestionar_opciones {
                 read ip
                 echo -n "Introduce el nombre del host: "
                 read nombre_host
-                echo "$ip $nombre_host" | sudo tee -a /etc/hosts
-
+                echo $sudo_password | sudo -S bash -c "echo '$ip $nombre_host' >> /etc/hosts"
                 echo "¿Deseas agregar otra entrada? (y/n): "
                 read continuar
             done
@@ -79,9 +116,7 @@ function gestionar_opciones {
                 echo "Borrar una entrada del archivo /etc/hosts:"
                 echo -n "Introduce la IP o el nombre del host a borrar: "
                 read entrada
-
-                sudo sed -i".bak" "/$entrada/d" /etc/hosts
-
+                echo $sudo_password | sudo -S sed -i".bak" "/$entrada/d" /etc/hosts
                 echo "¿Deseas borrar otra entrada? (y/n): "
                 read continuar
             done
@@ -96,6 +131,7 @@ function gestionar_opciones {
         echo "2. Agregar entrada al archivo /etc/hosts"
         echo "3. Borrar entrada del archivo /etc/hosts"
         echo "4. Volver al menú principal"
+        echo "5. Salir del script"
         read opcion_hosts
 
         case $opcion_hosts in
@@ -111,18 +147,25 @@ function gestionar_opciones {
             4 )
                 gestionar_opciones
                 ;;
+            5 )
+		clear
+                echo "Saliendo del programa"
+	        exit 0
+		;;
             * )
                 clear
                 echo "Opción no válida."
+		exit 127
                 ;;
         esac
     }
 
     clear
     echo "¿Qué deseas hacer?"
-    echo "1. Conectar VPN"
+    echo "1. Conectar o desconectar la VPN de Hack the Box"
     echo "2. Manipular archivo /etc/hosts"
-    echo "3. Salir"
+    echo "3. Volver al menú principal"
+    echo "4. Salir del programa"
     read opcion_principal
 
     case $opcion_principal in
@@ -133,6 +176,9 @@ function gestionar_opciones {
             manipular_hosts
             ;;
         3 )
+            gestionar_opciones
+	   ;; 
+	4 )
             clear
             echo "Saliendo del script."
             exit 0
@@ -140,10 +186,12 @@ function gestionar_opciones {
         * )
             clear
             echo "Opción no válida."
+	    exit 127
             ;;
     esac
 }
 
+solicitar_sudo_password
 gestionar_opciones
 
 
