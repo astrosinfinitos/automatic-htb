@@ -172,7 +172,6 @@ function gestionar_opciones {
     esac
 }
 
-solicitar_sudo_password
 gestionar_opciones
 
 
