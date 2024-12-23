@@ -2,72 +2,53 @@
 
 opcion_hosts=""
 opcion_vpn=""
-sudo_password=""
-
-# Comprobar si el script se ejecuta con permisos de root
-if [[ $EUID -ne 0 ]]; then
-    clear
-    echo "Este script debe ser ejecutado como root." 1>&2
-    exit 1
-fi
-
-function solicitar_sudo_password {
-    clear
-    echo -n "Introduce la contraseña de sudo: "
-    read -s sudo_password
-    echo
-}
 
 function gestionar_opciones {
     function conectar_vpn {
         clear
         echo "¿Qué deseas hacer?"
         echo "1. Conectar a VPN de laboratorio"
-        echo "2. Conectar a VPN de starting point"
-        echo "3. Interrumpir la conexión VPN"
-        echo "4. Volver al menú principal"
-        echo "5. Salir del script"
+        echo "2. Interrumpir la conexión VPN"
+        echo "3. Volver al menú principal"
+        echo "4. Salir del script"
         read opcion_vpn
 
         case $opcion_vpn in
             1 )
+                #!/bin/bash
                 clear
-                echo "Intentando conectar a VPN de laboratorio."
-                echo $sudo_password | sudo -S openvpn YOUR_VPN &>/dev/null &
-                sleep 2
-                if pgrep openvpn &>/dev/null; then
-                    echo "Conexión a VPN de laboratorio exitosa" 
+                echo "Intentando conectar a VPN de laboratorio..."
+
+                # Ejecutar OpenVPN en segundo plano con redirección de salida a un archivo de log
+                sudo openvpn TU_VPN > /tmp/openvpn.log 2>&1 &
+
+                # Esperar 5 segundos para que la conexión se establezca
+                sleep 5
+
+                # Verificar si el proceso openvpn con el archivo de configuración específico se está ejecutando
+                if pgrep -f "TU_VPN" > /dev/null; then
+                echo "Conexión a VPN de laboratorio exitosa"
                 else
-                    echo "Error: La conexión a VPN de laboratorio falló."
+                echo "Error: La conexión a VPN de laboratorio falló."
+                # Mostrar los últimos 10 mensajes del archivo de log para ayudar a diagnosticar el problema
+                echo "Últimos mensajes del log de OpenVPN:"
+                tail -n 10 /tmp/openvpn.log
                 fi
                 ;;
             2 )
                 clear
-                echo "Intentando conectar a VPN de starting point."
-                echo $sudo_password | sudo -S openvpn YOUR_VPN_LAB &>/dev/null &
-                sleep 2
-                if pgrep openvpn &>/dev/null; then
-                    echo "Conexión a VPN de starting point exitosa."
-                else
-                    echo "Error: La conexión a VPN de starting point falló."
-                fi
-                ;;
-            3 )
-                clear
                 echo "Interrumpiendo la conexión VPN."
                 if pgrep openvpn &>/dev/null; then
-                    echo $sudo_password | sudo -S pkill openvpn
+                    sudo -S pkill openvpn
                     sleep 2
                     if ! pgrep openvpn &>/dev/null; then
-                        echo "Conexión VPN interrumpida exitosamente."
-                    else
-                        echo "Error: No se pudo interrumpir la conexión VPN."
+                        echo "Conexion VPN interrumpida con exito "
                     fi
                 else
                     echo "No hay conexión VPN activa."
                 fi
                 ;;
-            4 )
+            3 )
                 clear
                 gestionar_opciones
                 ;;
@@ -116,7 +97,7 @@ function gestionar_opciones {
                 echo "Borrar una entrada del archivo /etc/hosts:"
                 echo -n "Introduce la IP o el nombre del host a borrar: "
                 read entrada
-                echo $sudo_password | sudo -S sed -i".bak" "/$entrada/d" /etc/hosts
+                sudo -S sed -i".bak" "/$entrada/d" /etc/hosts
                 echo "¿Deseas borrar otra entrada? (y/n): "
                 read continuar
             done
@@ -162,7 +143,7 @@ function gestionar_opciones {
 
     clear
     echo "¿Qué deseas hacer?"
-    echo "1. Conectar o desconectar la VPN de Hack the Box"
+    echo "1. Conectar o desconectar la VPN"
     echo "2. Manipular archivo /etc/hosts"
     echo "3. Volver al menú principal"
     echo "4. Salir del programa"
